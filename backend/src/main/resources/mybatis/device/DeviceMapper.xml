@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.device.mapper.DeviceMapper">
+
+    <resultMap type="Device" id="DeviceResult">
+        <id     property="sensorId"             column="sensor_id"             />
+        <result property="materialCode"         column="material_code"         />
+        <result property="installationLocation" column="installation_location" />
+        <result property="deviceType"           column="device_type"           />
+        <result property="deviceName"           column="device_name"           />
+        <result property="manufacturer"         column="manufacturer"         />
+        <result property="specifications"       column="specifications"       />
+        <result property="status"               column="status"               />
+        <result property="createTime"           column="create_time"           />
+        <result property="updateTime"           column="update_time"           />
+        <result property="remark"               column="remark"               />
+    </resultMap>
+
+    <resultMap type="DeviceStatus" id="DeviceStatusResult">
+        <id     property="sensorId"           column="sensor_id"           />
+        <result property="onlineStatus"       column="online_status"       />
+        <result property="batteryLevel"       column="battery_level"       />
+        <result property="signalStrength"     column="signal_strength"     />
+        <result property="smokeConcentration" column="smoke_concentration" />
+        <result property="temperature"        column="temperature"        />
+        <result property="humidity"           column="humidity"           />
+        <result property="updateTime"         column="update_time"         />
+    </resultMap>
+
+    <!-- 批量插入设备 -->
+    <insert id="batchInsertDevices" parameterType="java.util.List">
+        INSERT INTO device (
+            sensor_id, 
+            material_code, 
+            installation_location, 
+            device_type, 
+            device_name, 
+            manufacturer, 
+            specifications, 
+            status, 
+            create_time, 
+            update_time, 
+            remark
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.sensorId}, 
+                #{item.materialCode}, 
+                #{item.installationLocation}, 
+                #{item.deviceType}, 
+                #{item.deviceName}, 
+                #{item.manufacturer}, 
+                #{item.specifications}, 
+                #{item.status}, 
+                #{item.createTime}, 
+                #{item.updateTime}, 
+                #{item.remark}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

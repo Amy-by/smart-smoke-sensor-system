@@ -1,14 +1,7 @@
 <template>
   <div class="app-container">
     <el-card>
-      <template #header>传感器列表（占位）</template>
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        description="后端接口完成后，可点击刷新拉取真实数据；当前展示示例数据。"
-        class="mb-16"
-      />
+      <template #header>传感器列表</template>
       <div class="mb-12">
         <el-space>
           <el-input v-model="query.sensorId" placeholder="IMEI" clearable />
@@ -17,54 +10,92 @@
       </div>
       <el-table :data="list" border size="small" style="width: 100%">
         <el-table-column prop="sensorId" label="IMEI" min-width="160" />
-        <el-table-column prop="area" label="区域" min-width="120" />
+        <el-table-column prop="installationLocation" label="安装位置" min-width="120" />
         <el-table-column prop="status" label="状态" min-width="100">
           <template #default="{ row }">
-            <el-tag :type="statusTag(row.status)">{{ row.status }}</el-tag>
+            <el-tag :type="statusTag(row.status)">{{ row.status === '1' ? '已激活' : '未激活' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="smoke" label="烟雾(%)" min-width="100" />
-        <el-table-column prop="temp" label="温度(℃)" min-width="100" />
-        <el-table-column prop="battery" label="电量(%)" min-width="100" />
+        <el-table-column prop="createTime" label="创建时间" min-width="160" />
+        <el-table-column prop="updateTime" label="更新时间" min-width="160" />
         <el-table-column label="操作" min-width="120">
-          <template #default>
-            <el-button type="primary" text size="small">详情</el-button>
+          <template #default="{ row }">
+            <el-button type="primary" text size="small" @click="toDetail(row.sensorId)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <div class="mt-12">
+        <el-pagination
+          v-model:current-page="pagination.currentPage"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="pagination.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { listSensors } from '@/api/deviceApi'
 
+const router = useRouter()
 const loading = ref(false)
-const list = ref([
-  { sensorId: '869149040980562', area: '示例区域', status: '离线', smoke: 0, temp: 24, battery: 90 }
-])
+const list = ref([])
 const query = ref({ sensorId: '' })
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0
+})
 
 const statusTag = (status) => {
-  if (status === '报警') return 'danger'
-  if (status === '在线') return 'success'
-  return 'info'
+  return status === '1' ? 'success' : 'info'
 }
 
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await listSensors(query.value)
+    const res = await listSensors({
+      ...query.value,
+      pageNum: pagination.currentPage,
+      pageSize: pagination.pageSize
+    })
     if (res && res.rows) {
       list.value = res.rows
+      pagination.total = res.total
     }
   } catch (e) {
-    // 保持示例数据，避免空表
+    console.error('获取设备列表失败', e)
+    list.value = []
   } finally {
     loading.value = false
   }
 }
+
+const toDetail = (sensorId) => {
+  router.push({
+    path: `/iot/device/detail/${sensorId}`
+  })
+}
+
+const handleSizeChange = (size) => {
+  pagination.pageSize = size
+  loadData()
+}
+
+const handleCurrentChange = (current) => {
+  pagination.currentPage = current
+  loadData()
+}
+
+// 初始加载数据
+loadData()
 </script>
 
 <style scoped>
@@ -73,6 +104,9 @@ const loadData = async () => {
 }
 .mb-12 {
   margin-bottom: 12px;
+}
+.mt-12 {
+  margin-top: 12px;
 }
 </style>
 

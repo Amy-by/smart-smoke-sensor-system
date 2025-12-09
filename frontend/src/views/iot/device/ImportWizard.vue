@@ -1,12 +1,12 @@
 <template>
   <div class="app-container">
     <el-card>
-      <template #header>批量导入传感器（占位）</template>
+      <template #header>批量导入传感器</template>
       <el-alert
         type="info"
         :closable="false"
         show-icon
-        description="上传 Excel 后调用后端导入接口；当前为占位流程，未调用真实接口。"
+        description="上传 Excel 后将批量导入传感器数据到系统中。"
         class="mb-16"
       />
       <el-upload
@@ -30,6 +30,7 @@
 <script setup>
 import { ref } from 'vue'
 import { importSensors } from '@/api/deviceApi'
+import { ElMessage } from 'element-plus'
 
 const file = ref(null)
 const uploading = ref(false)
@@ -39,14 +40,25 @@ const onFileChange = (uploadFile) => {
 }
 
 const submit = async () => {
-  if (!file.value) return
+  if (!file.value) {
+    ElMessage.warning('请选择要上传的Excel文件')
+    return
+  }
   uploading.value = true
   try {
     const formData = new FormData()
     formData.append('file', file.value)
-    await importSensors(formData)
+    const response = await importSensors(formData)
+    if (response.code === 200) {
+      ElMessage.success(`成功导入 ${response.data} 个设备`)
+      // 重置表单
+      file.value = null
+    } else {
+      ElMessage.error(response.msg || '导入失败')
+    }
   } catch (e) {
-    // 后端未接入时忽略错误
+    console.error('导入失败:', e)
+    ElMessage.error('导入失败，请检查文件格式和内容是否正确')
   } finally {
     uploading.value = false
   }

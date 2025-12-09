@@ -1,29 +1,27 @@
 import request from '@/utils/request'
 
-// 设备列表（占位：后端接口就绪后接入）
+// 设备列表
 export function listSensors(query) {
   return request({
-    url: '/api/device/sensor/list',
+    url: '/iot/device/list',
     method: 'get',
     params: query
   })
 }
 
-// 设备参数查询
+// 设备详情查询
 export function getSensorParams(sensorId) {
   return request({
-    url: '/api/device/sensor/params',
-    method: 'get',
-    params: { sensorId }
+    url: `/iot/device/${sensorId}`,
+    method: 'get'
   })
 }
 
-// 配置下发
-export function configSensor(data) {
+// 设备状态查询
+export function getDeviceStatus(sensorId) {
   return request({
-    url: '/api/sensor/config',
-    method: 'post',
-    data
+    url: `/iot/device/status/${sensorId}`,
+    method: 'get'
   })
 }
 

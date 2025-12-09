@@ -1,101 +1,103 @@
 <template>
   <div class="app-container">
     <el-card>
-      <template #header>传感器详情（占位）</template>
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        description="待接入后端接口与实时/历史数据；当前为占位视图。"
-        class="mb-16"
-      />
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="IMEI">{{ sensor.sensorId }}</el-descriptions-item>
-        <el-descriptions-item label="区域">{{ sensor.area }}</el-descriptions-item>
-        <el-descriptions-item label="安装位置">{{ sensor.installationLocation }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag :type="sensor.status === '报警' ? 'danger' : 'success'">{{ sensor.status }}</el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-divider />
-      <h4>实时数据</h4>
-      <el-space class="mb-12">
-        <span>烟雾浓度：{{ sensor.smoke }}%</span>
-        <span>温度：{{ sensor.temp }}℃</span>
-        <span>电量：{{ sensor.battery }}%</span>
-      </el-space>
-      <el-divider />
-      <h4>参数配置（示例）</h4>
-      <el-form :model="configForm" label-width="140px" class="config-form">
-        <el-form-item label="烟雾阈值（%）">
-          <el-input-number v-model="configForm.smokeThreshold" :min="0" :max="200" />
-        </el-form-item>
-        <el-form-item label="温度上限（℃）">
-          <el-input-number v-model="configForm.tempUpperLimit" :min="-20" :max="70" />
-        </el-form-item>
-        <el-form-item label="正常上报间隔（秒）">
-          <el-input-number v-model="configForm.normalWorkInterval" :min="30" :max="86400" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :loading="submitting" @click="submitConfig">提交占位</el-button>
-        </el-form-item>
-      </el-form>
+      <template #header>传感器详情</template>
+      <div v-if="loading" class="loading-container">
+        <el-skeleton :rows="6" animated />
+      </div>
+      <div v-else>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="IMEI">{{ deviceInfo.sensorId }}</el-descriptions-item>
+          <el-descriptions-item label="安装位置">{{ deviceInfo.installationLocation }}</el-descriptions-item>
+          <el-descriptions-item label="设备状态">
+            <el-tag :type="deviceInfo.status === '1' ? 'success' : 'info'">
+              {{ deviceInfo.status === '1' ? '已激活' : '未激活' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="在线状态">
+            <el-tag :type="deviceStatus.onlineStatus === 1 ? 'success' : 'danger'">
+              {{ deviceStatus.onlineStatus === 1 ? '在线' : '离线' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ deviceInfo.createTime }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ deviceInfo.updateTime }}</el-descriptions-item>
+        </el-descriptions>
+        <el-divider />
+        <h4>实时状态数据</h4>
+        <el-space class="mb-12">
+          <span>烟雾浓度：{{ deviceStatus.smokeConcentration }}%</span>
+          <span>温度：{{ deviceStatus.temperature }}℃</span>
+          <span>湿度：{{ deviceStatus.humidity }}%</span>
+          <span>电量：{{ deviceStatus.batteryLevel }}%</span>
+          <span>信号强度：{{ deviceStatus.signalStrength }}dBm</span>
+        </el-space>
+        <el-divider />
+        <h4>设备状态</h4>
+        <el-tag :type="deviceStatus.deviceStatus === 0 ? 'success' : deviceStatus.deviceStatus === 1 ? 'danger' : 'warning'">
+          {{ deviceStatus.deviceStatus === 0 ? '正常' : deviceStatus.deviceStatus === 1 ? '报警' : '故障' }}
+        </el-tag>
+      </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { configSensor, getSensorParams } from '@/api/deviceApi'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { getSensorParams, getDeviceStatus } from '@/api/deviceApi'
 
-const sensor = ref({
-  sensorId: '869149040980562',
-  area: '示例区域',
-  installationLocation: '示例位置',
-  status: '在线',
-  smoke: 0,
-  temp: 24,
-  battery: 90
+const route = useRoute()
+const loading = ref(false)
+const deviceInfo = ref({
+  sensorId: '',
+  installationLocation: '',
+  status: '',
+  createTime: '',
+  updateTime: ''
+})
+const deviceStatus = ref({
+  smokeConcentration: 0,
+  temperature: 0,
+  humidity: 0,
+  batteryLevel: 0,
+  signalStrength: 0,
+  onlineStatus: 0,
+  deviceStatus: 0
 })
 
-const configForm = ref({
-  smokeThreshold: 100,
-  tempUpperLimit: 50,
-  normalWorkInterval: 86400
-})
-
-const submitting = ref(false)
-
-const submitConfig = async () => {
-  submitting.value = true
+const loadDeviceInfo = async () => {
+  const sensorId = route.params.sensorId
+  if (!sensorId) return
+  
+  loading.value = true
   try {
-    await configSensor({
-      sensorId: sensor.value.sensorId,
-      configParams: { ...configForm.value }
-    })
-  } catch (e) {
-    // 后端未接入时忽略错误
-  } finally {
-    submitting.value = false
-  }
-}
-
-const loadParams = async () => {
-  try {
-    const res = await getSensorParams(sensor.value.sensorId)
-    if (res && res.data) {
-      configForm.value = {
-        smokeThreshold: res.data.smokeThreshold ?? configForm.value.smokeThreshold,
-        tempUpperLimit: res.data.tempUpperLimit ?? configForm.value.tempUpperLimit,
-        normalWorkInterval: res.data.normalWorkInterval ?? configForm.value.normalWorkInterval
-      }
+    // 获取设备基本信息
+    const infoRes = await getSensorParams(sensorId)
+    if (infoRes && infoRes.data) {
+      deviceInfo.value = infoRes.data
+    }
+    
+    // 获取设备状态信息
+    const statusRes = await getDeviceStatus(sensorId)
+    if (statusRes && statusRes.data) {
+      deviceStatus.value = statusRes.data
     }
   } catch (e) {
-    // 保留默认示例
+    console.error('获取设备详情失败', e)
+  } finally {
+    loading.value = false
   }
 }
 
-loadParams()
+// 监听路由参数变化，重新加载数据
+watch(() => route.params.sensorId, () => {
+  loadDeviceInfo()
+})
+
+// 初始加载数据
+onMounted(() => {
+  loadDeviceInfo()
+})
 </script>
 
 <style scoped>
@@ -105,8 +107,8 @@ loadParams()
 .mb-12 {
   margin-bottom: 12px;
 }
-.config-form {
-  max-width: 480px;
+.loading-container {
+  padding: 16px 0;
 }
 </style>
 
