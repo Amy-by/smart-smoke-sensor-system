@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.alarm.service.mapper.AlarmMapper">
+
+    <resultMap type="com.iot.alarm.domain.AlarmVO" id="AlarmVOResult">
+        <id     property="id"                column="id"                />
+        <result property="sensorId"          column="sensor_id"          />
+        <result property="alarmType"         column="alarm_type"         />
+        <result property="alarmValue"        column="alarm_value"        />
+        <result property="alarmTime"         column="alarm_time"         />
+        <result property="handleStatus"      column="handle_status"      />
+        <result property="handleUser"        column="handle_user"        />
+        <result property="handleTime"        column="handle_time"        />
+        <result property="alarmDescription"  column="alarm_description"  />
+        <result property="isAcknowledged"    column="is_acknowledged"    />
+        <result property="acknowledgeUser"   column="acknowledge_user"   />
+        <result property="acknowledgeTime"   column="acknowledge_time"   />
+        <result property="sensorName"        column="sensor_name"        />
+        <result property="installationLocation" column="installation_location" />
+    </resultMap>
+
+    <resultMap type="com.iot.alarm.domain.AlarmLog" id="AlarmLogResult">
+        <id     property="id"                column="id"                />
+        <result property="sensorId"          column="sensor_id"          />
+        <result property="alarmType"         column="alarm_type"         />
+        <result property="alarmValue"        column="alarm_value"        />
+        <result property="alarmTime"         column="alarm_time"         />
+        <result property="handleStatus"      column="handle_status"      />
+        <result property="handleUser"        column="handle_user"        />
+        <result property="handleTime"        column="handle_time"        />
+        <result property="alarmDescription"  column="alarm_description"  />
+        <result property="isAcknowledged"    column="is_acknowledged"    />
+        <result property="acknowledgeUser"   column="acknowledge_user"   />
+        <result property="acknowledgeTime"   column="acknowledge_time"   />
+    </resultMap>
+
+    <sql id="selectAlarmVo">
+        select id, sensor_id, alarm_type, alarm_value, alarm_time, handle_status, handle_user, handle_time, 
+               alarm_description, is_acknowledged, acknowledge_user, acknowledge_time 
+        from sensor_alarm_log
+    </sql>
+
+    <select id="selectAlarmList" parameterType="com.iot.alarm.domain.AlarmQueryDTO" resultMap="AlarmVOResult">
+        <include refid="selectAlarmVo"/>
+        <where>
+            <if test="sensorId != null and sensorId != ''">
+                and sensor_id = #{sensorId}
+            </if>
+            <if test="alarmType != null">
+                and alarm_type = #{alarmType}
+            </if>
+            <if test="handleStatus != null">
+                and handle_status = #{handleStatus}
+            </if>
+            <if test="startTime != null">
+                and alarm_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and alarm_time <= #{endTime}
+            </if>
+        </where>
+        order by alarm_time desc
+    </select>
+
+    <select id="selectAlarmById" parameterType="Long" resultMap="AlarmVOResult">
+        <include refid="selectAlarmVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertAlarm" parameterType="com.iot.alarm.domain.AlarmLog" useGeneratedKeys="true" keyProperty="id">
+        insert into sensor_alarm_log(
+            sensor_id, 
+            alarm_type, 
+            alarm_value, 
+            alarm_time, 
+            handle_status, 
+            handle_user, 
+            handle_time, 
+            alarm_description, 
+            is_acknowledged, 
+            acknowledge_user, 
+            acknowledge_time
+        ) values(
+            #{sensorId}, 
+            #{alarmType}, 
+            #{alarmValue}, 
+            #{alarmTime}, 
+            #{handleStatus}, 
+            #{handleUser}, 
+            #{handleTime}, 
+            #{alarmDescription}, 
+            #{isAcknowledged}, 
+            #{acknowledgeUser}, 
+            #{acknowledgeTime}
+        )
+    </insert>
+
+    <update id="updateAlarm" parameterType="com.iot.alarm.domain.AlarmLog">
+        update sensor_alarm_log
+        <set>
+            <if test="handleStatus != null">
+                handle_status = #{handleStatus},
+            </if>
+            <if test="handleUser != null and handleUser != ''">
+                handle_user = #{handleUser},
+            </if>
+            <if test="handleTime != null">
+                handle_time = #{handleTime},
+            </if>
+            <if test="alarmDescription != null and alarmDescription != ''">
+                alarm_description = #{alarmDescription},
+            </if>
+            <if test="isAcknowledged != null">
+                is_acknowledged = #{isAcknowledged},
+            </if>
+            <if test="acknowledgeUser != null and acknowledgeUser != ''">
+                acknowledge_user = #{acknowledgeUser},
+            </if>
+            <if test="acknowledgeTime != null">
+                acknowledge_time = #{acknowledgeTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteAlarmById" parameterType="Long">
+        delete from sensor_alarm_log where id = #{id}
+    </delete>
+
+    <delete id="deleteAlarmByIds" parameterType="Long[]">
+        delete from sensor_alarm_log where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectAlarmsBySensorId" parameterType="String" resultMap="AlarmLogResult">
+        <include refid="selectAlarmVo"/>
+        where sensor_id = #{sensorId}
+        order by alarm_time desc
+    </select>
+
+    <select id="selectLatestAlarmsBySensorId" parameterType="java.util.Map" resultMap="AlarmLogResult">
+        <include refid="selectAlarmVo"/>
+        where sensor_id = #{sensorId}
+        order by alarm_time desc
+        limit #{limit}
+    </select>
+</mapper>
