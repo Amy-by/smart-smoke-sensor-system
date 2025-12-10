@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.notification.service.mapper.NotificationQuotaMapper">
+
+    <resultMap type="NotificationQuota" id="NotificationQuotaResult">
+        <id     property="id"              column="id"              />
+        <result property="sensorId"       column="sensor_id"       />
+        <result property="freeVoiceCount" column="free_voice_count" />
+        <result property="freeSmsCount"   column="free_sms_count"   />
+        <result property="balance"        column="balance"        />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateTime"     column="update_time"     />
+    </resultMap>
+
+    <!-- 通过传感器ID查询通知额度 -->
+    <select id="selectNotificationQuotaBySensorId" parameterType="String" resultMap="NotificationQuotaResult">
+        SELECT * FROM notification_quota WHERE sensor_id = #{sensorId}
+    </select>
+
+    <!-- 新增通知额度 -->
+    <insert id="insertNotificationQuota" parameterType="NotificationQuota">
+        INSERT INTO notification_quota (
+            sensor_id, 
+            free_voice_count, 
+            free_sms_count, 
+            balance, 
+            create_time, 
+            update_time
+        ) VALUES (
+            #{sensorId}, 
+            #{freeVoiceCount}, 
+            #{freeSmsCount}, 
+            #{balance}, 
+            NOW(), 
+            NOW()
+        )
+    </insert>
+
+    <!-- 修改通知额度 -->
+    <update id="updateNotificationQuota" parameterType="NotificationQuota">
+        UPDATE notification_quota 
+        SET 
+            free_voice_count = #{freeVoiceCount}, 
+            free_sms_count = #{freeSmsCount}, 
+            balance = #{balance}, 
+            update_time = NOW()
+        WHERE sensor_id = #{sensorId}
+    </update>
+
+    <!-- 扣减免费语音通知额度 -->
+    <update id="deductFreeVoiceQuota" parameterType="String">
+        UPDATE notification_quota 
+        SET 
+            free_voice_count = free_voice_count - 1, 
+            update_time = NOW()
+        WHERE sensor_id = #{sensorId} AND free_voice_count > 0
+    </update>
+
+    <!-- 扣减免费短信通知额度 -->
+    <update id="deductFreeSmsQuota" parameterType="String">
+        UPDATE notification_quota 
+        SET 
+            free_sms_count = free_sms_count - 1, 
+            update_time = NOW()
+        WHERE sensor_id = #{sensorId} AND free_sms_count > 0
+    </update>
+
+    <!-- 扣减余额 -->
+    <update id="deductBalance" parameterType="NotificationQuota">
+        UPDATE notification_quota 
+        SET 
+            balance = balance - #{balance}, 
+            update_time = NOW()
+        WHERE sensor_id = #{sensorId} AND balance >= #{balance}
+    </update>
+
+    <!-- 充值余额 -->
+    <update id="rechargeBalance" parameterType="NotificationQuota">
+        UPDATE notification_quota 
+        SET 
+            balance = balance + #{balance}, 
+            update_time = NOW()
+        WHERE sensor_id = #{sensorId}
+    </update>
+
+    <!-- 增加免费语音通知额度 -->
+    <update id="addFreeVoiceQuota" parameterType="NotificationQuota">
+        UPDATE notification_quota 
+        SET 
+            free_voice_count = free_voice_count + #{freeVoiceCount}, 
+            update_time = NOW()
+        WHERE sensor_id = #{sensorId}
+    </update>
+
+    <!-- 增加免费短信通知额度 -->
+    <update id="addFreeSmsQuota" parameterType="NotificationQuota">
+        UPDATE notification_quota 
+        SET 
+            free_sms_count = free_sms_count + #{freeSmsCount}, 
+            update_time = NOW()
+        WHERE sensor_id = #{sensorId}
+    </update>
+</mapper>

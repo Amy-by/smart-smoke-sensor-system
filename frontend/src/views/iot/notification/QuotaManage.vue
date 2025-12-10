@@ -1,26 +1,19 @@
 <template>
   <div class="app-container">
     <el-card>
-      <template #header>通知额度管理（占位）</template>
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        description="后端额度接口接入后可查询/调整额度，当前为占位表单。"
-        class="mb-16"
-      />
-      <el-form :model="form" label-width="140px" class="quota-form">
-        <el-form-item label="传感器 IMEI">
+      <template #header>通知额度管理</template>
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="140px" class="quota-form">
+        <el-form-item label="传感器 IMEI" prop="sensorId">
           <el-input v-model="form.sensorId" placeholder="输入传感器 IMEI" />
         </el-form-item>
-        <el-form-item label="免费语音条数">
+        <el-form-item label="免费语音条数" prop="freeVoiceCount">
           <el-input-number v-model="form.freeVoiceCount" :min="0" />
         </el-form-item>
-        <el-form-item label="免费短信条数">
+        <el-form-item label="免费短信条数" prop="freeSmsCount">
           <el-input-number v-model="form.freeSmsCount" :min="0" />
         </el-form-item>
-        <el-form-item label="余额（元）">
-          <el-input-number v-model="form.balance" :min="0" :step="0.1" />
+        <el-form-item label="余额（元）" prop="balance">
+          <el-input-number v-model="form.balance" :min="0" :step="0.1" :precision="2" />
         </el-form-item>
         <el-form-item>
           <el-space>
@@ -36,38 +29,70 @@
 <script setup>
 import { ref } from 'vue'
 import { getQuota, updateQuota } from '@/api/notificationApi'
+import { ElMessage } from 'element-plus'
 
+const formRef = ref(null)
 const loading = ref(false)
 const saving = ref(false)
+
 const form = ref({
-  sensorId: '869149040980562',
-  freeVoiceCount: 10,
-  freeSmsCount: 20,
+  sensorId: '',
+  freeVoiceCount: 0,
+  freeSmsCount: 0,
   balance: 0
 })
 
+const rules = ref({
+  sensorId: [
+    { required: true, message: '请输入传感器 IMEI', trigger: 'blur' },
+    { min: 15, max: 17, message: '传感器 IMEI 长度应为15-17位', trigger: 'blur' }
+  ]
+})
+
 const loadQuota = async () => {
+  // 验证表单
+  if (!form.value.sensorId) {
+    ElMessage.warning('请先输入传感器 IMEI')
+    return
+  }
+
   loading.value = true
   try {
     const res = await getQuota(form.value.sensorId)
-    if (res && res.data) {
-      form.value.freeVoiceCount = res.data.freeVoiceCount ?? form.value.freeVoiceCount
-      form.value.freeSmsCount = res.data.freeSmsCount ?? form.value.freeSmsCount
-      form.value.balance = res.data.balance ?? form.value.balance
+    if (res && res.code === 200 && res.data) {
+      form.value.freeVoiceCount = res.data.freeVoiceCount || 0
+      form.value.freeSmsCount = res.data.freeSmsCount || 0
+      form.value.balance = res.data.balance || 0
+      ElMessage.success('查询成功')
+    } else {
+      ElMessage.error(res?.msg || '查询失败')
     }
   } catch (e) {
-    // 保留默认示例
+    ElMessage.error('查询失败：' + (e?.message || '网络错误'))
+    console.error('查询额度失败：', e)
   } finally {
     loading.value = false
   }
 }
 
 const saveQuota = async () => {
+  // 验证表单
+  if (!form.value.sensorId) {
+    ElMessage.warning('请先输入传感器 IMEI')
+    return
+  }
+
   saving.value = true
   try {
-    await updateQuota({ ...form.value })
+    const res = await updateQuota({ ...form.value })
+    if (res && res.code === 200) {
+      ElMessage.success('调整成功')
+    } else {
+      ElMessage.error(res?.msg || '调整失败')
+    }
   } catch (e) {
-    // 后端未接入时忽略
+    ElMessage.error('调整失败：' + (e?.message || '网络错误'))
+    console.error('调整额度失败：', e)
   } finally {
     saving.value = false
   }
