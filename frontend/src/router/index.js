@@ -122,6 +122,24 @@ export const dynamicRoutes = [
         component: () => import('@/views/iot/notification/QuotaManage.vue'),
         name: 'IotQuotaManage',
         meta: { title: '通知额度', icon: 'money', permissions: [] }
+      },
+      {
+        path: 'data-query',
+        component: () => import('@/views/iot/data-log/DataQuery.vue'),
+        name: 'IotDataQuery',
+        meta: { title: '数据查询', icon: 'search', permissions: [] }
+      },
+      {
+        path: 'data-statistics',
+        component: () => import('@/views/iot/data-log/DataStatistics.vue'),
+        name: 'IotDataStatistics',
+        meta: { title: '数据统计', icon: 'chart', permissions: [] }
+      },
+      {
+        path: 'data-visualization',
+        component: () => import('@/views/iot/data-log/DataVisualization.vue'),
+        name: 'IotDataVisualization',
+        meta: { title: '数据可视化', icon: 'visual', permissions: [] }
       }
     ]
   },

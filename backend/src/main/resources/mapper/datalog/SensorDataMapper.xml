@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.datalog.mapper.SensorDataMapper">
+
+    <resultMap type="com.iot.datalog.domain.SensorDataLog" id="SensorDataLogResult">
+        <id     property="id"               column="id"               />
+        <result property="sensorId"         column="sensor_id"        />
+        <result property="smokeConcentration" column="smoke_concentration" />
+        <result property="temperature"      column="temperature"      />
+        <result property="batteryLevel"     column="battery_level"    />
+        <result property="deviceStatus"     column="device_status"    />
+        <result property="collectionTime"   column="collection_time"  />
+        <result property="createTime"       column="create_time"      />
+        <result property="updateTime"       column="update_time"      />
+        <result property="remark"           column="remark"           />
+    </resultMap>
+
+    <insert id="insertSensorDataLog" parameterType="com.iot.datalog.domain.SensorDataLog" useGeneratedKeys="true" keyProperty="id">
+        <include refid="insertSensorDataLogSQL" />
+    </insert>
+
+    <sql id="insertSensorDataLogSQL">
+        insert into sensor_data_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sensorId != null and sensorId != ''">sensor_id,</if>
+            <if test="smokeConcentration != null">smoke_concentration,</if>
+            <if test="temperature != null">temperature,</if>
+            <if test="batteryLevel != null">battery_level,</if>
+            <if test="deviceStatus != null and deviceStatus != ''">device_status,</if>
+            <if test="collectionTime != null">collection_time,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sensorId != null and sensorId != ''">#{sensorId},</if>
+            <if test="smokeConcentration != null">#{smokeConcentration},</if>
+            <if test="temperature != null">#{temperature},</if>
+            <if test="batteryLevel != null">#{batteryLevel},</if>
+            <if test="deviceStatus != null and deviceStatus != ''">#{deviceStatus},</if>
+            <if test="collectionTime != null">#{collectionTime},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+        </trim>
+    </sql>
+
+    <select id="selectSensorDataLogList" parameterType="com.iot.datalog.domain.SensorDataLog" resultMap="SensorDataLogResult">
+        select id, sensor_id, smoke_concentration, temperature, battery_level, device_status, collection_time, create_time, update_time, remark
+        from sensor_data_log
+        <where>
+            <if test="sensorId != null and sensorId != ''">
+                and sensor_id = #{sensorId}
+            </if>
+            <if test="smokeConcentration != null">
+                and smoke_concentration = #{smokeConcentration}
+            </if>
+            <if test="temperature != null">
+                and temperature = #{temperature}
+            </if>
+            <if test="batteryLevel != null">
+                and battery_level = #{batteryLevel}
+            </if>
+            <if test="deviceStatus != null and deviceStatus != ''">
+                and device_status = #{deviceStatus}
+            </if>
+            <if test="collectionTime != null">
+                and collection_time = #{collectionTime}
+            </if>
+            <if test="beginTime != null and beginTime != ''">
+                and date_format(collection_time,'%y%m%d') &gt;= date_format(#{beginTime},'%y%m%d')
+            </if>
+            <if test="endTime != null and endTime != ''">
+                and date_format(collection_time,'%y%m%d') &lt;= date_format(#{endTime},'%y%m%d')
+            </if>
+        </where>
+        order by collection_time desc
+    </select>
+
+    <select id="selectSensorDataStatistics" parameterType="map" resultType="map">
+        select
+        <choose>
+            <when test="statisticsType == 'AVG'">
+                avg(smoke_concentration) as avgSmoke, avg(temperature) as avgTemp, avg(battery_level) as avgBattery
+            </when>
+            <when test="statisticsType == 'MAX'">
+                max(smoke_concentration) as maxSmoke, max(temperature) as maxTemp, max(battery_level) as maxBattery
+            </when>
+            <when test="statisticsType == 'MIN'">
+                min(smoke_concentration) as minSmoke, min(temperature) as minTemp, min(battery_level) as minBattery
+            </when>
+            <otherwise>
+                avg(smoke_concentration) as avgSmoke, avg(temperature) as avgTemp, avg(battery_level) as avgBattery
+            </otherwise>
+        </choose>
+        from sensor_data_log
+        where sensor_id = #{sensorId}
+          and collection_time between #{startTime} and #{endTime}
+    </select>
+
+    <select id="selectLatestSensorData" parameterType="string" resultMap="SensorDataLogResult">
+        select id, sensor_id, smoke_concentration, temperature, battery_level, device_status, collection_time, create_time, update_time, remark
+        from sensor_data_log
+        where sensor_id = #{sensorId}
+        order by collection_time desc
+        limit 1
+    </select>
+
+</mapper>
