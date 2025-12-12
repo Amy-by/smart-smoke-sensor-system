@@ -33,6 +33,12 @@ public class UserConstants
     /** 部门停用状态 */
     public static final String DEPT_DISABLE = "1";
 
+    /** 区域正常状态 */
+    public static final String AREA_NORMAL = "0";
+
+    /** 区域停用状态 */
+    public static final String AREA_DISABLE = "1";
+
     /** 字典正常状态 */
     public static final String DICT_NORMAL = "0";
 

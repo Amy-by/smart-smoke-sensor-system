@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.project.system.domain.SysArea;
 import com.ruoyi.project.system.domain.SysDept;
 import com.ruoyi.project.system.domain.SysMenu;
 
@@ -49,6 +50,14 @@ public class TreeSelect implements Serializable
         this.id = menu.getMenuId();
         this.label = menu.getMenuName();
         this.children = menu.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList());
+    }
+
+    public TreeSelect(SysArea area)
+    {
+        this.id = area.getAreaId();
+        this.label = area.getAreaName();
+        this.disabled = StringUtils.equals(UserConstants.AREA_DISABLE, area.getStatus());
+        this.children = area.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList());
     }
 
     public Long getId()
